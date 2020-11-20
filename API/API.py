@@ -5,6 +5,7 @@ import traceback
 import pandas as pd
 import numpy as np
 import codecs as codecs
+import re
 
 app = Flask(__name__)
 
@@ -188,17 +189,20 @@ def numComillasRel(str):
             count = count + 1
     return count/sum(1 for c in str)
 
+def replaceNumbers(str):
+    return re.sub('[0-9]+','*NUMBER*',str)
+      
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
     if rf:
         try:
             json_ = request.json
-            print(json_)
-            headline = json_["headline"]
+            headline =replaceNumbers(json_["headline"])
             link =  json_["link"]
-            text =  json_["text"]
-            
+            text =  replaceNumbers(json_["text"])
+
             pMayusculasHeadLine = mayusculas(headline)
             SignosInterrogacion = numInterrogacionTot(text)
             pSignosInterrogacion = numInterrogacionRel(text)
@@ -216,7 +220,7 @@ def predict():
             ResultadosGoogle = 0 
             ResultadosGoogleNews = 0
             ceroResultadosGoogleNews = 1 if ResultadosGoogleNews==0 else 0
-            
+            print(text)
             dictEntrada = {
                 '%MayusculasHeadLine': pMayusculasHeadLine,
                 '#SignosInterrogación': SignosInterrogacion,
