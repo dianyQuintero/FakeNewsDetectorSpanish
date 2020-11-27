@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import codecs as codecs
 import re
+import requests
 
 app = Flask(__name__)
 
@@ -203,6 +204,11 @@ def predict():
             link =  json_["link"]
             text =  replaceNumbers(json_["text"])
 
+            url = 'http://2019e153d250.ngrok.io/scrap'
+            myobj = {'headline': headline}
+
+            response = requests.request('POST', url, data = myobj)
+            r = response.json()
             pMayusculasHeadLine = mayusculas(headline)
             SignosInterrogacion = numInterrogacionTot(text)
             pSignosInterrogacion = numInterrogacionRel(text)
@@ -217,10 +223,9 @@ def predict():
             pNumeros =  numRel(text)
             Comillas =  numComillasTot(text)
             pComillas =  numComillasRel(text)
-            ResultadosGoogle = 0 
-            ResultadosGoogleNews = 0
+            ResultadosGoogle = numResults(r[0]['GSearch'])
+            ResultadosGoogleNews = numResults(r[0]['GSearchNews']) 
             ceroResultadosGoogleNews = 1 if ResultadosGoogleNews==0 else 0
-            print(text)
             dictEntrada = {
                 '%MayusculasHeadLine': pMayusculasHeadLine,
                 '#SignosInterrogación': SignosInterrogacion,
@@ -240,17 +245,18 @@ def predict():
                 '#ResultadosGoogleNews': ResultadosGoogleNews,
                 '0ResultadosGoogleNews': ceroResultadosGoogleNews
             }
-
-            print(dictEntrada)
-
             #jsonEntrada = json.loads(dictEntrada)
             
             query = pd.DataFrame(dictEntrada, index=[0])
             query = query.reindex(columns=model_columns, fill_value=0)
 
             prediction = list(rf.predict(query))
-            
-            return jsonify({'prediction': str(prediction)})
+            print(prediction)
+            if(prediction[0] == 0):
+                return "Nuestro modelo ha determinado que la noticia que ingresaste es falsa"
+            else:
+                return "Nuestro modelo ha determinado que la noticia que ingresaste es verdadera"
+
         except Exception as e:
             print(e)
             return 'holis'
